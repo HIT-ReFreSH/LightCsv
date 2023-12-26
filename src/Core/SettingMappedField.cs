@@ -6,22 +6,11 @@ using System.Threading.Tasks;
 
 namespace LightCsv.Core;
 
-internal class SettingMappedField:IMappedField 
+internal class SettingMappedField(string name, string alias, string @default, int index) : IMappedField
 {
-    public SettingMappedField(string name, string alias, string @default, int index)
-    {
-        Name = name;
-        Alias = alias;
-        Default = @default;
-        Index = index;
-    }
-
-    public string Name { get; }
-    public string Alias { get; }
-    public string Default { get; }
-    public int Index { get; }
-    public void RunMap(string statement, string[] target)
-    {
-        target[Index] = statement;
-    }
+    public string Name { get; } = name;
+    public string Alias { get; } = alias;
+    public string Default { get; } = @default;
+    public int Index { get; } = index;
+    public void RunMap(string statement, string[] target) { target[Index] = statement; }
 }

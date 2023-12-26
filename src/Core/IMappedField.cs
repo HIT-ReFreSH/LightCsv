@@ -20,12 +20,12 @@ public record MappedFieldConfig(string Name, string Alias, string Type, string D
     public IMappedField Create(int index)
     {
         return Type switch
-        {
-            "bul" => new FlagMappedField(Name, Alias, index, Default == "+"),
-            "num" => new NumberMappedField(Name, Alias, double.Parse(Default), index),
-            "seq" => new AppendingMappedField(Name, Alias, Default, index),
-            "str" => new SettingMappedField(Name, Alias, Default, index),
-            _=>throw new ArgumentOutOfRangeException(nameof(Type)),
-        };
+               {
+                   "bul" => new FlagMappedField(Name, Alias, index, Default == "+"),
+                   "num" => new NumberMappedField(Name, Alias, double.Parse(Default), index),
+                   "seq" => new AppendingMappedField(Name, Alias, Default, index),
+                   "str" => new SettingMappedField(Name, Alias, Default, index),
+                   _ => throw new ArgumentOutOfRangeException(nameof(Type)),
+               };
     }
 }

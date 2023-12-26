@@ -6,20 +6,13 @@ using System.Threading.Tasks;
 
 namespace LightCsv.Core;
 
-public class AppendingMappedField : IMappedField
+public class AppendingMappedField(string name, string alias, string @default, int index) : IMappedField
 {
-    public AppendingMappedField(string name, string alias, string @default, int index)
-    {
-        Name = name;
-        Alias = alias;
-        Default = @default;
-        Index = index;
-    }
+    public string Name { get; } = name;
+    public string Alias { get; } = alias;
+    public string Default { get; } = @default;
+    public int Index { get; } = index;
 
-    public string Name { get; }
-    public string Alias { get; }
-    public string Default { get; }
-    public int Index { get; }
     public void RunMap(string statement, string[] target)
     {
         if (string.IsNullOrEmpty(target[Index]))
@@ -30,6 +23,5 @@ public class AppendingMappedField : IMappedField
         {
             target[Index] += $";{statement}";
         }
-        
     }
 }

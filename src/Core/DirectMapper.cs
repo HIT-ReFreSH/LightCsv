@@ -6,19 +6,15 @@ using System.Threading.Tasks;
 
 namespace LightCsv.Core;
 
-public class DirectMapper:ICsvFieldMapper
+public class DirectMapper(int index) : ICsvFieldMapper
 {
-    private readonly int _index;
-    public DirectMapper(int index)
-    {
-        _index = index;
-    }
-
     public void Map(string[] origin, string[] target)
     {
-        if (_index >= origin.Length)
+        if (index >= origin.Length)
         {
-            return;}
-        target[_index] = origin[_index];
+            return;
+        }
+
+        target[index] = origin[index];
     }
 }

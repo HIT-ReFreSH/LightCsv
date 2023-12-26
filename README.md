@@ -1,8 +1,8 @@
 <div  align=center>
-    <img src="https://github.com/HIT-ReFreSH/LightCsv/raw/master/images/Full_2048.png" width = 30% height = 30%  />
+    <img src="https://github.com/HIT-ReFreSH/LightCsv/raw/main/images/Full_2048.png" width = 30% height = 30%  />
 </div>
 
-# LightCsv-基于Csv的轻量化分析工具
+# LightCsv
 
 
 ![GitHub](https://img.shields.io/github/license/HIT-ReFreSH/LightCsv?style=flat-square)
@@ -10,5 +10,7 @@
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/HIT-ReFreSH/LightCsv?style=flat-square)
 ![GitHub code size](https://img.shields.io/github/languages/code-size/HIT-ReFreSH/LightCsv?style=flat-square)
+
+LightCsv is a lightweight analysis tool for csv documents.
 
 // TODO

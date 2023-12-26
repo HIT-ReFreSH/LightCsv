@@ -11,11 +11,8 @@ using System.Threading.Tasks;
 namespace LightCsv;
 
 [SuitInfo("LightCSV")]
-public class Driver
+public class Driver(IIOHub iO)
 {
-    private readonly IIOHub _io;
-    public Driver(IIOHub iO) { _io = iO; }
-
     [SuitAlias("c")]
     public void CreateProject(string csv, string projectFile)
     {
@@ -24,19 +21,19 @@ public class Driver
             csv,
             headers =>
             {
-                var selected = _io.CuiSelectItemsFrom("Select fields to Include as programmable", headers).ToHashSet();
+                var selected = iO.CuiSelectItemsFrom("Select fields to Include as programmable", headers).ToHashSet();
                 return headers.Select(h => selected.Contains(h)).ToArray();
             }
         );
-        _io.WriteLineAsync("Input mapped fields: bul|num|seq|str name alias[ default], end with blank line.");
+        iO.WriteLineAsync("Input mapped fields: bul|num|seq|str name alias[ default], end with blank line.");
         for (;;)
         {
-            var line = _io.ReadLine();
+            var line = iO.ReadLine();
             if (string.IsNullOrEmpty(line)) break;
             var spl = line.Split(' ');
             if (spl.Length is < 3 or > 4)
             {
-                _io.WriteLine("Invalid def: Too short or too long", OutputType.Warning);
+                iO.WriteLine("Invalid def: Too short or too long", OutputType.Warning);
                 continue;
             }
 
@@ -50,6 +47,12 @@ public class Driver
     public void RunProject(string projectFile, string newCsv)
     {
         CsvProjectSetting.FromFile(projectFile).Build().ProcessFile(newCsv);
+    }
+
+    [SuitAlias("mdx")]
+    public void RunProjectToMd(string projectFile, string newMd)
+    {
+        CsvProjectSetting.FromFile(projectFile).Build().ProcessFileToMarkdown(newMd);
     }
 
     //[SuitAlias("code"), SuitAlias("$")]

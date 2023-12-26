@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LightCsv": {
+      "commandName": "Project",
+      "workingDirectory": "D:\\Projects\\Wiley.proj\\M3Fetch"
+    }
+  }
+}
