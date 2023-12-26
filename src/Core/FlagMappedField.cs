@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LightCsv.Core;
+﻿namespace LightCsv.Core;
 
 public class FlagMappedField(string name, string alias, int index, bool @default) : IMappedField
 {

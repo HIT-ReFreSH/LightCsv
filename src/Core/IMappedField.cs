@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LightCsv.Core;
+﻿namespace LightCsv.Core;
 
 public interface IMappedField
 {
@@ -25,7 +19,7 @@ public record MappedFieldConfig(string Name, string Alias, string Type, string D
                    "num" => new NumberMappedField(Name, Alias, double.Parse(Default), index),
                    "seq" => new AppendingMappedField(Name, Alias, Default, index),
                    "str" => new SettingMappedField(Name, Alias, Default, index),
-                   _ => throw new ArgumentOutOfRangeException(nameof(Type)),
+                   _ => throw new ArgumentOutOfRangeException(nameof(Type))
                };
     }
 }

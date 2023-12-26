@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace LightCsv.Core;
 
 public class CsvProject
 {
-    private readonly List<ICsvFieldMapper> _mappers = new();
     private readonly string _header;
+    private readonly List<ICsvFieldMapper> _mappers = new();
     private readonly string _origin;
+
+    private readonly Func<string[]> _targetFactory;
 
     public CsvProject(CsvProjectSetting setting)
     {
@@ -34,10 +32,7 @@ public class CsvProject
         _targetFactory = () =>
         {
             var r = new string[targetFieldCount];
-            for (var i = sfc; i < targetFieldCount; i++)
-            {
-                r[i] = setting.MappedFields[i - sfc].Default;
-            }
+            for (var i = sfc; i < targetFieldCount; i++) r[i] = setting.MappedFields[i - sfc].Default;
 
             return r;
         };
@@ -61,10 +56,11 @@ public class CsvProject
         input.Close();
     }
 
-    public void ProcessFileToMarkdown(string target)
+    public void ProcessFileToMarkdown(string target, string appendix)
     {
         using var input = new StreamReader(File.OpenRead(_origin));
         using var output = new StreamWriter(File.OpenWrite(target));
+        var appendixLines = File.ReadAllText(appendix);
         _ = input.ReadLine();
         var headers = _header.Split(", ");
         output.WriteLine($"# {_origin}\n");
@@ -77,12 +73,11 @@ public class CsvProject
             if (mappedValues.Length > 1 && mappedValues.Length == headers.Length)
             {
                 output.WriteLine($"## {mappedValues[0]}\n");
-                for (var i = 1; i < mappedValues.Length; i++)
-                {
-                    output.WriteLine($"- {headers[i]}: {mappedValues[i]}");
-                }
+                for (var i = 1; i < mappedValues.Length; i++) output.WriteLine($"- {headers[i]}: {mappedValues[i]}");
 
                 output.WriteLine();
+
+                output.WriteLine(appendixLines);
             }
             else
             {
@@ -94,15 +89,10 @@ public class CsvProject
         input.Close();
     }
 
-    private readonly Func<string[]> _targetFactory;
-
     private string[] ProcessLine(string[] origin)
     {
         var target = _targetFactory();
-        foreach (var mapper in _mappers)
-        {
-            mapper.Map(origin, target);
-        }
+        foreach (var mapper in _mappers) mapper.Map(origin, target);
 
         return target;
     }
@@ -110,30 +100,35 @@ public class CsvProject
 
 public record CsvProjectSetting(string Origin, List<OriginFieldInfo> OriginFields, List<MappedFieldConfig> MappedFields)
 {
-    public CsvProject Build() => new(this);
+    public CsvProject Build() { return new CsvProject(this); }
 
-    public void ToFile(string path) => File.WriteAllText
-    (
-        path,
-        JsonSerializer.Serialize
+    public void ToFile(string path)
+    {
+        File.WriteAllText
         (
-            this,
-            options: new(JsonSerializerDefaults.Web)
-                     {
-                         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                     }
-        )
-    );
+            path,
+            JsonSerializer.Serialize
+            (
+                this,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                {
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                }
+            )
+        );
+    }
 
     public static CsvProjectSetting FromFile(string fileName)
-        => JsonSerializer.Deserialize<CsvProjectSetting>
+    {
+        return JsonSerializer.Deserialize<CsvProjectSetting>
         (
             File.ReadAllText(fileName),
-            options: new(JsonSerializerDefaults.Web)
-                     {
-                         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                     }
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            }
         )!;
+    }
 
     public static CsvProjectSetting ParseCsv(string fileName, Func<string[], bool[]> includeSelector)
     {
@@ -154,14 +149,11 @@ public record CsvProjectSetting(string Origin, List<OriginFieldInfo> OriginField
                 var value = values[i];
                 if (string.IsNullOrEmpty(value)) continue;
                 var vspl = value.Split(';');
-                foreach (var v in vspl)
-                {
-                    fields[i].Options?.TryAdd(v, string.Empty);
-                }
+                foreach (var v in vspl) fields[i].Options?.TryAdd(v, string.Empty);
             }
         }
 
         file.Close();
-        return new(fileName, fields, new());
+        return new CsvProjectSetting(fileName, fields, new List<MappedFieldConfig>());
     }
 }

@@ -1,4 +1,4 @@
-﻿using LightCsv;
-using HitRefresh.MobileSuit;
+﻿using HitRefresh.MobileSuit;
+using LightCsv;
 
 Suit.QuickStart4BitPowerLine<Driver>(args);

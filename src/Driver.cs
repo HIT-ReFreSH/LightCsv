@@ -1,12 +1,6 @@
-﻿using LightCsv.Core;
-using HitRefresh.MobileSuit;
+﻿using HitRefresh.MobileSuit;
 using HitRefresh.MobileSuit.UI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using LightCsv.Core;
 
 namespace LightCsv;
 
@@ -37,7 +31,7 @@ public class Driver(IIOHub iO)
                 continue;
             }
 
-            proj.MappedFields.Add(new(spl[1], spl[2], spl[0], spl.Length == 3 ? "" : spl[3]));
+            proj.MappedFields.Add(new MappedFieldConfig(spl[1], spl[2], spl[0], spl.Length == 3 ? "" : spl[3]));
         }
 
         proj.ToFile(projectFile);
@@ -50,7 +44,7 @@ public class Driver(IIOHub iO)
     }
 
     [SuitAlias("mdx")]
-    public void RunProjectToMd(string projectFile, string newMd)
+    public void RunProjectToMd(string projectFile, string newMd, string appendix)
     {
         CsvProjectSetting.FromFile(projectFile).Build().ProcessFileToMarkdown(newMd);
     }
@@ -60,5 +54,5 @@ public class Driver(IIOHub iO)
     //{
     //    Process.Start("code", new[] { projectFile });
     //}
-    [SuitAlias("cd")] public void ChangeDir(string dir) => Directory.SetCurrentDirectory(dir);
+    [SuitAlias("cd")] public void ChangeDir(string dir) { Directory.SetCurrentDirectory(dir); }
 }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LightCsv.Core;
+﻿namespace LightCsv.Core;
 
 public class AppendingMappedField(string name, string alias, string @default, int index) : IMappedField
 {
@@ -16,12 +10,8 @@ public class AppendingMappedField(string name, string alias, string @default, in
     public void RunMap(string statement, string[] target)
     {
         if (string.IsNullOrEmpty(target[Index]))
-        {
             target[Index] = statement;
-        }
         else
-        {
             target[Index] += $";{statement}";
-        }
     }
 }
