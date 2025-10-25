@@ -1,11 +1,14 @@
-﻿using System.Text.Encodings.Web;
+﻿using System.Globalization;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace LightCsv.Core;
 
 public class CsvProject
 {
-    private readonly string _header;
+    private readonly string[] _headers;
     private readonly List<ICsvFieldMapper> _mappers = new();
     private readonly string _origin;
 
@@ -28,7 +31,7 @@ public class CsvProject
         }
 
         headers.AddRange(setting.MappedFields.Select(f => f.Name));
-        _header = string.Join(", ", headers);
+        _headers = headers.ToArray();
         _targetFactory = () =>
         {
             var r = new string[targetFieldCount];
@@ -41,42 +44,66 @@ public class CsvProject
     public void ProcessFile(string target)
     {
         using var input = new StreamReader(File.OpenRead(_origin));
+        using var csvReader = new CsvReader(input, CultureInfo.InvariantCulture);
         using var output = new StreamWriter(File.OpenWrite(target));
-        _ = input.ReadLine();
-        output.WriteLine(_header);
-        for (;;)
-        {
-            var line = input.ReadLine();
-            if (line is null) break;
-            var values = line.Split(",");
-            output.WriteLine(string.Join(",", ProcessLine(values)));
-        }
+        using var csvWriter = new CsvWriter(output, CultureInfo.InvariantCulture);
 
-        output.Close();
-        input.Close();
+        csvReader.Read();
+        csvReader.ReadHeader();
+
+        foreach (var header in _headers)
+        {
+            csvWriter.WriteField(header);
+        }
+        csvWriter.NextRecord();
+
+        while (csvReader.Read())
+        {
+            var fieldCount = csvReader.Parser.Count;
+            var values = new string[fieldCount];
+            for (var i = 0; i < fieldCount; i++)
+            {
+                values[i] = csvReader.GetField(i) ?? string.Empty;
+            }
+
+            var processedValues = ProcessLine(values);
+            foreach (var value in processedValues)
+            {
+                csvWriter.WriteField(value);
+            }
+            csvWriter.NextRecord();
+        }
     }
 
     public void ProcessFileToMarkdown(string target, string appendix, Func<string[], bool[]> hiddenSelector)
     {
         using var input = new StreamReader(File.OpenRead(_origin));
+        using var csvReader = new CsvReader(input, CultureInfo.InvariantCulture);
         using var output = new StreamWriter(File.OpenWrite(target));
+
         var appendixLines = File.ReadAllText(appendix);
-        _ = input.ReadLine();
-        var headers = _header.Split(", ");
-        var hidden = hiddenSelector(headers);
+        csvReader.Read();
+        csvReader.ReadHeader();
+
+        var hidden = hiddenSelector(_headers);
         output.WriteLine($"# {_origin}\n");
-        for (;;)
+
+        while (csvReader.Read())
         {
-            var line = input.ReadLine();
-            if (line is null) break;
-            var values = line.Split(",");
+            var fieldCount = csvReader.Parser.Count;
+            var values = new string[fieldCount];
+            for (var i = 0; i < fieldCount; i++)
+            {
+                values[i] = csvReader.GetField(i) ?? string.Empty;
+            }
+
             var mappedValues = ProcessLine(values);
-            if (mappedValues.Length > 1 && mappedValues.Length == headers.Length)
+            if (mappedValues.Length > 1 && mappedValues.Length == _headers.Length)
             {
                 output.WriteLine($"## {mappedValues[0]}\n");
                 for (var i = 1; i < mappedValues.Length; i++)
                     if (!hidden[i])
-                        output.WriteLine($"- {headers[i]}: {mappedValues[i]}");
+                        output.WriteLine($"- {_headers[i]}: {mappedValues[i]}");
 
                 output.WriteLine();
 
@@ -84,12 +111,9 @@ public class CsvProject
             }
             else
             {
-                throw new Exception($"Length not matched! {mappedValues}, {headers}");
+                throw new Exception($"Length not matched! {mappedValues}, {_headers}");
             }
         }
-
-        output.Close();
-        input.Close();
     }
 
     private string[] ProcessLine(string[] origin)
@@ -137,28 +161,28 @@ public record CsvProjectSetting(string Origin, List<OriginFieldInfo> OriginField
         (string fileName, Func<string[], bool[]> includeSelector, Func<string[], bool[]> hiddenSelector)
     {
         using var file = new StreamReader(File.OpenRead(fileName));
-        var header = file.ReadLine();
-        if (header is null) throw new Exception("Empty CSV!");
-        var headers = header.Split(',');
+        using var csv = new CsvReader(file, CultureInfo.InvariantCulture);
+
+        csv.Read();
+        csv.ReadHeader();
+        var headers = csv.HeaderRecord ?? throw new Exception("Empty CSV!");
+
         var included = includeSelector(headers);
         var hidden = hiddenSelector(headers);
         var fields = headers.Select((h, i) => new OriginFieldInfo(h, included[i] ? [] : null, hidden[i])).ToList();
-        ;
-        for (;;)
+
+        while (csv.Read())
         {
-            var line = file.ReadLine();
-            if (line is null) break;
-            var values = line.Split(",");
-            for (var i = 0; i < values.Length; i++)
+            var fieldCount = csv.Parser.Count;
+            for (var i = 0; i < fieldCount; i++)
             {
-                var value = values[i];
+                var value = csv.GetField(i);
                 if (string.IsNullOrEmpty(value)) continue;
-                var vspl = value.Split(';');
+                var vspl = value.Split(", ");
                 foreach (var v in vspl) fields[i].Options?.TryAdd(v, string.Empty);
             }
         }
 
-        file.Close();
         return new CsvProjectSetting(fileName, fields, new List<MappedFieldConfig>());
     }
 }

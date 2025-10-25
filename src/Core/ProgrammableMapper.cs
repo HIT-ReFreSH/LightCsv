@@ -7,7 +7,7 @@ public class ProgrammableMapper(int index, OriginFieldInfo originFieldInfo, MapP
 {
     public void Map(string[] origin, string[] target)
     {
-        var originLine = origin[index].Split(';');
+        var originLine = origin[index].Split(";");
         foreach (var s in originLine)
         {
             if (string.IsNullOrEmpty(s)) continue;

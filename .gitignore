@@ -8,6 +8,7 @@ target/
 .vs/
 .build/
 data/
+.claude/
 
 # User-specific files
 *.suo
