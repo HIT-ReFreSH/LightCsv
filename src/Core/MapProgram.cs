@@ -18,7 +18,7 @@ public class MapProgram
     {
         if (string.IsNullOrWhiteSpace(statementSequence)) return;
         var statements = statementSequence.Split(';');
-        foreach (var statement in statements)
+        foreach (var statement in statements.Where(s => !string.IsNullOrEmpty(s)))
         {
             var statementSpl = statement.Split(":", 2);
             var field = statementSpl[0];

@@ -17,12 +17,12 @@ public class CsvProject
         var originFields = setting.OriginFields;
         var sfc = originFields.Count;
         var targetFieldCount = sfc + setting.MappedFields.Count;
-        _mappers.AddRange(originFields.Select((_, i) => new DirectMapper(i)));
+        _mappers.AddRange(originFields.Select((f, i) => new DirectMapper(f.Hidden, i)));
         var mapProgram = new MapProgram(setting.MappedFields.Select((f, i) => f.Create(sfc + i)));
         var headers = new List<string>();
         foreach (var (f, i) in originFields.Select((i, f) => (i, f)))
         {
-            headers.Add(f.Header);
+            if (!f.Hidden) headers.Add(f.Header);
             if (f.Options is null) continue;
             _mappers.Add(new ProgrammableMapper(i, f, mapProgram.Executor));
         }
@@ -56,13 +56,14 @@ public class CsvProject
         input.Close();
     }
 
-    public void ProcessFileToMarkdown(string target, string appendix)
+    public void ProcessFileToMarkdown(string target, string appendix, Func<string[], bool[]> hiddenSelector)
     {
         using var input = new StreamReader(File.OpenRead(_origin));
         using var output = new StreamWriter(File.OpenWrite(target));
         var appendixLines = File.ReadAllText(appendix);
         _ = input.ReadLine();
         var headers = _header.Split(", ");
+        var hidden = hiddenSelector(headers);
         output.WriteLine($"# {_origin}\n");
         for (;;)
         {
@@ -73,7 +74,9 @@ public class CsvProject
             if (mappedValues.Length > 1 && mappedValues.Length == headers.Length)
             {
                 output.WriteLine($"## {mappedValues[0]}\n");
-                for (var i = 1; i < mappedValues.Length; i++) output.WriteLine($"- {headers[i]}: {mappedValues[i]}");
+                for (var i = 1; i < mappedValues.Length; i++)
+                    if (!hidden[i])
+                        output.WriteLine($"- {headers[i]}: {mappedValues[i]}");
 
                 output.WriteLine();
 
@@ -94,7 +97,7 @@ public class CsvProject
         var target = _targetFactory();
         foreach (var mapper in _mappers) mapper.Map(origin, target);
 
-        return target;
+        return target.Where(v => v != "(hidden)").ToArray();
     }
 }
 
@@ -130,14 +133,16 @@ public record CsvProjectSetting(string Origin, List<OriginFieldInfo> OriginField
         )!;
     }
 
-    public static CsvProjectSetting ParseCsv(string fileName, Func<string[], bool[]> includeSelector)
+    public static CsvProjectSetting ParseCsv
+        (string fileName, Func<string[], bool[]> includeSelector, Func<string[], bool[]> hiddenSelector)
     {
         using var file = new StreamReader(File.OpenRead(fileName));
         var header = file.ReadLine();
         if (header is null) throw new Exception("Empty CSV!");
         var headers = header.Split(',');
         var included = includeSelector(headers);
-        var fields = headers.Select((h, i) => new OriginFieldInfo(h, included[i] ? [] : null)).ToList();
+        var hidden = hiddenSelector(headers);
+        var fields = headers.Select((h, i) => new OriginFieldInfo(h, included[i] ? [] : null, hidden[i])).ToList();
         ;
         for (;;)
         {

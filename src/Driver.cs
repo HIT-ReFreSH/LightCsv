@@ -17,6 +17,11 @@ public class Driver(IIOHub iO)
             {
                 var selected = iO.CuiSelectItemsFrom("Select fields to Include as programmable", headers).ToHashSet();
                 return headers.Select(h => selected.Contains(h)).ToArray();
+            },
+            headers =>
+            {
+                var selected = iO.CuiSelectItemsFrom("Select original fields to Hide", headers).ToHashSet();
+                return headers.Select(h => selected.Contains(h)).ToArray();
             }
         );
         iO.WriteLineAsync("Input mapped fields: bul|num|seq|str name alias[ default], end with blank line.");
@@ -46,7 +51,20 @@ public class Driver(IIOHub iO)
     [SuitAlias("mdx")]
     public void RunProjectToMd(string projectFile, string newMd, string appendix)
     {
-        CsvProjectSetting.FromFile(projectFile).Build().ProcessFileToMarkdown(newMd);
+        CsvProjectSetting.FromFile(projectFile)
+                         .Build()
+                         .ProcessFileToMarkdown
+                          (
+                              newMd,
+                              appendix,
+                              headers =>
+                              {
+                                  var selected = iO.CuiSelectItemsFrom
+                                      ("Select original fields to Hide", headers)
+                                 .ToHashSet();
+                                  return headers.Select(h => selected.Contains(h)).ToArray();
+                              }
+                          );
     }
 
     //[SuitAlias("code"), SuitAlias("$")]
